@@ -29,17 +29,28 @@ export const useAuthStore = create<AuthStore>((set) => ({
       if (authError) throw authError;
       if (!authData.user) throw new Error('Falha ao criar usuário');
 
-      // Criar perfil
-      const { error: profileError } = await supabase.from('profiles').insert({
-        id: authData.user.id,
-        email: data.email,
-        full_name: data.full_name,
-        phone: data.phone,
-        cpf: data.cpf,
-        city: data.city,
-      });
+      // Aguardar um pouco para garantir que o usuário foi criado
+      await new Promise(resolve => setTimeout(resolve, 500));
 
-      if (profileError) throw profileError;
+      // Criar perfil com o cliente autenticado
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .insert([
+          {
+            id: authData.user.id,
+            email: data.email,
+            full_name: data.full_name,
+            phone: data.phone,
+            cpf: data.cpf,
+            city: data.city,
+          },
+        ])
+        .select();
+
+      if (profileError) {
+        console.error('Erro ao criar perfil:', profileError);
+        throw new Error(`Erro ao salvar dados: ${profileError.message}`);
+      }
 
       set({
         user: {
