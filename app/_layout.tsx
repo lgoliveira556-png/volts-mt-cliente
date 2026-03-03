@@ -11,7 +11,8 @@ SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
   const [fontsLoaded] = useFonts({
-    SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
+    // Usando fontes padrão do sistema
+    // SpaceMono removido pois não existe no projeto
   });
 
   const { isLoading, restoreToken } = useAuthStore();
