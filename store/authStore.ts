@@ -16,57 +16,35 @@ export const useAuthStore = create<AuthStore>((set) => ({
   isSignout: false,
   userToken: null,
 
+  // ==============================
+  // SIGN UP
+  // ==============================
   signUp: async (data: SignUpData) => {
     try {
       set({ isLoading: true });
 
-      // Criar usuário no Auth
-      const { data: authData, error: authError } = await supabase.auth.signUp({
+      const { data: authData, error } = await supabase.auth.signUp({
         email: data.email,
         password: data.password,
-      });
-
-      if (authError) throw authError;
-      if (!authData.user) throw new Error('Falha ao criar usuário');
-
-      // Aguardar um pouco para garantir que o usuário foi criado
-      await new Promise(resolve => setTimeout(resolve, 500));
-
-      // Criar perfil com o cliente autenticado
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .insert([
-          {
-            id: authData.user.id,
-            email: data.email,
+        options: {
+          data: {
             full_name: data.full_name,
             phone: data.phone,
             cpf: data.cpf,
             city: data.city,
           },
-        ])
-        .select();
+        },
+      });
 
-      if (profileError) {
-        console.error('Erro ao criar perfil:', profileError);
-        throw new Error(`Erro ao salvar dados: ${profileError.message}`);
-      }
+      if (error) throw error;
+      if (!authData.user) throw new Error('Falha ao criar usuário');
 
       set({
-        user: {
-          id: authData.user.id,
-          email: data.email,
-          full_name: data.full_name,
-          phone: data.phone,
-          cpf: data.cpf,
-          city: data.city,
-          avatar_url: null,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        },
+        user: null,
         userToken: authData.session?.access_token || null,
         isSignout: false,
       });
+
     } catch (error) {
       console.error('Erro ao registrar:', error);
       throw error;
@@ -75,6 +53,9 @@ export const useAuthStore = create<AuthStore>((set) => ({
     }
   },
 
+  // ==============================
+  // SIGN IN
+  // ==============================
   signIn: async (data: LoginData) => {
     try {
       set({ isLoading: true });
@@ -87,20 +68,20 @@ export const useAuthStore = create<AuthStore>((set) => ({
       if (error) throw error;
       if (!authData.user) throw new Error('Falha ao fazer login');
 
-      // Buscar perfil
       const { data: profile, error: profileError } = await supabase
         .from('profiles')
         .select('*')
         .eq('id', authData.user.id)
-        .single();
+        .maybeSingle();
 
       if (profileError) throw profileError;
 
       set({
-        user: profile,
+        user: profile ?? null,
         userToken: authData.session?.access_token || null,
         isSignout: false,
       });
+
     } catch (error) {
       console.error('Erro ao fazer login:', error);
       throw error;
@@ -109,15 +90,21 @@ export const useAuthStore = create<AuthStore>((set) => ({
     }
   },
 
+  // ==============================
+  // SIGN OUT
+  // ==============================
   signOut: async () => {
     try {
       set({ isLoading: true });
+
       await supabase.auth.signOut();
+
       set({
         user: null,
         userToken: null,
         isSignout: true,
       });
+
     } catch (error) {
       console.error('Erro ao fazer logout:', error);
       throw error;
@@ -126,6 +113,9 @@ export const useAuthStore = create<AuthStore>((set) => ({
     }
   },
 
+  // ==============================
+  // RESTORE SESSION
+  // ==============================
   restoreToken: async () => {
     try {
       set({ isLoading: true });
@@ -139,15 +129,16 @@ export const useAuthStore = create<AuthStore>((set) => ({
           .from('profiles')
           .select('*')
           .eq('id', data.session.user.id)
-          .single();
+          .maybeSingle();
 
         if (profileError) throw profileError;
 
         set({
-          user: profile,
+          user: profile ?? null,
           userToken: data.session.access_token,
           isSignout: false,
         });
+
       } else {
         set({
           user: null,
@@ -155,30 +146,39 @@ export const useAuthStore = create<AuthStore>((set) => ({
           isSignout: true,
         });
       }
+
     } catch (error) {
       console.error('Erro ao restaurar token:', error);
+
       set({
         user: null,
         userToken: null,
         isSignout: true,
       });
+
     } finally {
       set({ isLoading: false });
     }
   },
 
+  // ==============================
+  // UPDATE PROFILE
+  // ==============================
   updateProfile: async (updates: Partial<Profile>) => {
     try {
+      if (!updates.id) throw new Error('ID é obrigatório para atualizar');
+
       const { data, error } = await supabase
         .from('profiles')
         .update(updates)
         .eq('id', updates.id)
         .select()
-        .single();
+        .maybeSingle();
 
       if (error) throw error;
 
-      set({ user: data });
+      set({ user: data ?? null });
+
     } catch (error) {
       console.error('Erro ao atualizar perfil:', error);
       throw error;

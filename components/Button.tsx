@@ -6,9 +6,10 @@ import {
   ViewStyle,
   TextStyle,
   ActivityIndicator,
+  View,
 } from 'react-native';
-import LinearGradient from 'react-native-linear-gradient';
-import { Colors, Spacing, BorderRadius, Typography, Glow } from '@/constants/theme';
+import { LinearGradient } from 'expo-linear-gradient';
+import { Colors, Spacing, BorderRadius } from '@/constants/theme';
 
 interface ButtonProps {
   onPress: () => void;
@@ -49,7 +50,6 @@ export const Button: React.FC<ButtonProps> = ({
           paddingVertical: Spacing.lg,
           minHeight: 56,
         };
-      case 'md':
       default:
         return {
           paddingHorizontal: Spacing.lg,
@@ -61,16 +61,6 @@ export const Button: React.FC<ButtonProps> = ({
 
   const getVariantStyles = () => {
     switch (variant) {
-      case 'primary':
-        return {
-          container: {
-            backgroundColor: 'transparent',
-          },
-          text: {
-            color: Colors.text,
-            fontWeight: '600' as const,
-          },
-        };
       case 'secondary':
         return {
           container: {
@@ -78,10 +68,7 @@ export const Button: React.FC<ButtonProps> = ({
             borderWidth: 1,
             borderColor: Colors.border,
           },
-          text: {
-            color: Colors.text,
-            fontWeight: '600' as const,
-          },
+          text: { color: Colors.text },
         };
       case 'outline':
         return {
@@ -90,25 +77,19 @@ export const Button: React.FC<ButtonProps> = ({
             borderWidth: 2,
             borderColor: Colors.primary,
           },
-          text: {
-            color: Colors.primary,
-            fontWeight: '600' as const,
-          },
+          text: { color: Colors.primary },
         };
       case 'ghost':
         return {
           container: {
             backgroundColor: 'transparent',
           },
-          text: {
-            color: Colors.textSecondary,
-            fontWeight: '500' as const,
-          },
+          text: { color: Colors.textSecondary },
         };
       default:
         return {
           container: {},
-          text: {},
+          text: { color: Colors.text },
         };
     }
   };
@@ -116,7 +97,7 @@ export const Button: React.FC<ButtonProps> = ({
   const variantStyles = getVariantStyles();
   const sizeStyles = getSizeStyles();
 
-  const buttonContent = (
+  const content = (
     <TouchableOpacity
       onPress={onPress}
       disabled={isDisabled}
@@ -127,7 +108,6 @@ export const Button: React.FC<ButtonProps> = ({
         variantStyles.container,
         fullWidth && styles.fullWidth,
         isDisabled && styles.disabled,
-        style,
       ]}
     >
       {loading ? (
@@ -160,15 +140,14 @@ export const Button: React.FC<ButtonProps> = ({
           },
           fullWidth && { width: '100%' },
           isDisabled && { opacity: 0.5 },
-          style,
         ]}
       >
-        {buttonContent}
+        {content}
       </LinearGradient>
     );
   }
 
-  return buttonContent;
+  return <View style={style}>{content}</View>;
 };
 
 const styles = StyleSheet.create({
